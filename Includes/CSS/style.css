@@ -1,0 +1,112 @@
+body { 
+    background-color:#364b71; 
+    text-align: center;
+}
+
+h1 {
+    color: #88bbe3;
+    font-size: 18pt;
+    text-align: center;
+    font-family: helvetica;
+    font-weight: lighter;
+}
+
+.outer {
+    display: table;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.middle {
+    display: table-cell;
+    vertical-align: middle;
+}
+ 
+.inner {
+    margin-left: auto;
+    margin-right: auto;
+    width: 400px;
+}
+
+.image {
+    margin-top: 40px;
+}
+
+.form-style-8 {
+    width: 500px;
+    padding-top: 30px;
+    padding-left: 30px;
+    padding-right: 30px;
+    background: #FFFFFF;
+    margin: 50px auto;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.22);
+    -moz-box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.22);
+    -webkit-box-shadow:  0px 0px 15px rgba(0, 0, 0, 0.22);
+
+}
+.form-style-8 h2 {
+    background: #4D4D4D;
+    text-transform: uppercase;
+    font-family: 'Open Sans Condensed', sans-serif;
+    color: #797979;
+    font-size: 18px;
+    font-weight: 100;
+    padding: 20px;
+    margin: -30px -30px 30px -30px;
+}
+.canvas {
+    border-color: #d4d4d4;
+    border-width: 1px;
+}
+.form-style-8 h3 {
+    background: #fff;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: 'Open Sans Condensed', sans-serif;
+    color: #d4d4d4;
+    font-size: 14px;
+    font-weight: 100;
+    padding: 0px;
+    margin: 30px -30px 30px -30px;
+    display: table;
+}
+.form-style-8 h4 {
+    margin-top: 10px;
+}
+.form-style-8 h3 {
+    background: #fff;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: 'Open Sans Condensed', sans-serif;
+    color: #d4d4d4;
+    font-size: 14px;
+    font-weight: 100;
+    padding: 0px;
+}
+.realtimeSentiment {
+  width: 300px; 
+  float: left; 
+  margin: 0px 0 0 30px
+}
+.form-style-8 input[type="url"] {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    outline: none;
+    display: block;
+    width: 100%;
+    padding: 7px;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    background: transparent;
+    margin-bottom: 0px;
+    font: 16px Arial, Helvetica, sans-serif;
+    height: 45px;
+}
+#siric {
+    width: 400px;
+	height: 100px;
+	display: block;
+	margin: 0 auto;
+}

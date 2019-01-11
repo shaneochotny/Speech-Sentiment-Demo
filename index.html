@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    if (location.protocol != 'https:') {
+        location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+    }
+  </script>
+  <link href="https://cdn.muicss.com/mui-0.9.41/css/mui.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.muicss.com/mui-0.9.41/js/mui.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="Includes/CSS/style.css" />
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
+  <script src="Includes/Javascript/siriwave.js"></script>
+  <script src="Includes/Javascript/raphael-2.1.4.min.js"></script>
+  <script src="Includes/Javascript/justgage-1.0.1.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+  <script src="Includes/Javascript/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+  <title>Azure Speech Sentinment Demo</title>
+  <meta charset="UTF-8">
+  <script type="text/javascript">
+    var appInsights=window.appInsights||function(a){
+      function b(a){c[a]=function(){var b=arguments;c.queue.push(function(){c[a].apply(c,b)})}}var c={config:a},d=document,e=window;setTimeout(function(){var b=d.createElement("script");b.src=a.url||"https://az416426.vo.msecnd.net/scripts/a/ai.0.js",d.getElementsByTagName("script")[0].parentNode.appendChild(b)});try{c.cookie=d.cookie}catch(a){}c.queue=[];for(var f=["Event","Exception","Metric","PageView","Trace","Dependency"];f.length;)b("track"+f.pop());if(b("setAuthenticatedUserContext"),b("clearAuthenticatedUserContext"),b("startTrackEvent"),b("stopTrackEvent"),b("startTrackPage"),b("stopTrackPage"),b("flush"),!a.disableExceptionTracking){f="onerror",b("_"+f);var g=e[f];e[f]=function(a,b,d,e,h){var i=g&&g(a,b,d,e,h);return!0!==i&&c["_"+f](a,b,d,e,h),i}}return c
+      }({
+          instrumentationKey:"323fe384-3dcf-474b-8fb0-dc3fc3052caa"
+      });
+    window.appInsights=appInsights,appInsights.queue&&0===appInsights.queue.length&&appInsights.trackPageView();
+    </script>
+</head>
+
+<body>
+    <div class="outer">
+        <div class="middle">
+            <div class="inner form-style-8 ">
+                <h2>
+                    Azure Speech Sentinment Demo
+                    <div id="siric"></div>
+                </h2>
+                <div id="speechDiv" style="width:500px;"></div>
+                <h5 id="configWindow">
+                    <div class="mui--text-subhead mui--text-left">
+                        This is a demonstration of using two Azure Cognitive Services together. The 
+                        <a href="https://azure.microsoft.com/en-us/services/cognitive-services/speech-to-text/" target="_blank">Speech API</a> 
+                        is used for real-time speech to text translation and the 
+                        <a href="https://azure.microsoft.com/en-us/services/cognitive-services/text-analytics/" target="_blank">Text Analytics API</a> 
+                        is used for sentiment analysis on the spoken text. The source code is self contained within this page. 
+                        
+                        <br /><br />
+
+                        From within your Azure Subscription, you'll need to create both services and obtain the access keys which you'll 
+                        input below. Additionally, you'll want to use Chrome for this due to how the microphone is accessed.
+                    </div>
+                    <div>&nbsp;</div>
+                    <div class="mui-textfield">
+                        <input type="text" id="speechAPIKey" required>
+                        <label>Azure Speech API Key</label>
+                    </div>
+                    <div class="mui-textfield">
+                        <input type="text" id="textAnalyticsAPIKey" required>
+                        <label>Azure Text Analytics API Key</label>
+                    </div>
+                    <div class="mui-select">
+                        <select id="regionOptions">
+                            <option value="eastasia">East Asia</option>
+                            <option value="eastus">East US</option>
+                            <option value="eastus2" selected="selected">East US 2</option>
+                            <option value="northeurope">North Europe</option>
+                            <option value="southeastasia">Southeast Asia</option>
+                            <option value="westeurope">West Europe</option>
+                            <option value="westus">West US</option>
+                            <option value="westus2">West US 2</option>
+                        </select>
+                        <label>Azure Region</label>
+                    </div>
+                    <button id="speechsdkStartContinuousRecognition" class="mui-btn mui-btn--primary" disabled>Start</button>
+                    <div>&nbsp;</div>
+                    <div class="mui-divider"></div>
+                </h5>
+                <h3 id="animationsWindow" style="opacity: 0.5">
+                    <div class="realtimeSentiment">
+                        <h4>Real-Time Sentiment</h4>
+                        <canvas id="sentimentWave" class="canvas" width=300 height=100></canvas>
+                    </div>
+                        <div style="width: 200px; float: left;">
+                        <div id="sentimentGauge" class="200x160px"></div>
+                    </div>
+                </h3>
+            </div>
+        </div>
+    </div>
+
+	<script>
+        // I left everything in index.html to have code in one spot for demo purposes. The
+        // other includes are the actual libraries/SDK's themselves.
+        //
+        // There are 3 code blocks here: 
+        //     1) Loading the animations
+        //     2) Speech to text translation
+        //     3) Sentiment analysis
+        
+		var SW = new SiriWave({
+			width: 240,
+			height: 100,
+			speed: 0.08,
+			amplitude: 0.1,
+			container: document.getElementById('siric'),
+			autostart: true,
+			style: 'ios9'
+		});
+
+        var sentimentGauge = new JustGage({
+            id: "sentimentGauge",
+            value: 0,
+            min: 0,
+            max: 100,
+            widgetH: 100,
+            titleFontSize: "14px",
+            minLabelMinFontSize: "14px",
+            maxLabelMinFontSize: "14px",
+            titleFontFamily: "Open Sans Condensed",
+            titleFontColor: "#d4d4d4",
+            labelFontColor: "#d4d4d4",
+            hideValue: true,
+            levelColors: [
+                "#fd0000",
+                "#feb300",
+                "#feef00",
+                "#9ac20d",
+                "#0dc213"
+            ],
+            title: "OVERALL SENTIMENT"
+        });
+
+        var ctx = sentimentWave.getContext('2d');
+            w = sentimentWave.width,
+            h = sentimentWave.height,
+            px = 0, 
+            opx = 0, 
+            speed = 0.4,
+            py = 50,
+            opy = py,
+            scanBarWidth = 20;
+            ctx.strokeStyle = 'rgba(32, 133, 252, 0.6)';
+            ctx.lineWidth = 2;
+
+        loop();
+
+        function loop() {
+            px += speed;
+            ctx.clearRect(px,0, scanBarWidth, h);
+            ctx.beginPath();
+            ctx.moveTo(opx, opy);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            opx = px;
+            opy = py;
+                        
+            if (opx > w) {
+                px = opx = -speed;
+            }
+                
+            requestAnimationFrame(loop);
+        }
+    </script>
+
+    <script>
+        // Speech to text translation
+
+        var phraseDiv, speechAPIKey, textAnalyticsAPIKey, regionOptions, SpeechSDK, reco, sdkStartContinousRecognitionBtn;
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            speechAPIKey = document.getElementById("speechAPIKey");
+            textAnalyticsAPIKey = document.getElementById("textAnalyticsAPIKey");
+            regionOptions = document.getElementById("regionOptions");
+            sdkStartContinousRecognitionBtn = document.getElementById("speechsdkStartContinuousRecognition");
+            phraseDiv = document.getElementById("speechDiv");
+
+            speechAPIKey.addEventListener("change", function () {
+                if (speechAPIKey.value && textAnalyticsAPIKey.value) {
+                    $("#speechsdkStartContinuousRecognition").removeAttr("disabled");
+                } else {
+                    $("#speechsdkStartContinuousRecognition").attr("disabled", "disabled");
+                }
+            })
+
+            textAnalyticsAPIKey.addEventListener("change", function () {
+                if (speechAPIKey.value && textAnalyticsAPIKey.value) {
+                    $("#speechsdkStartContinuousRecognition").removeAttr("disabled");
+                } else {
+                    $("#speechsdkStartContinuousRecognition").attr("disabled", "disabled");
+                }
+            })
+
+            sdkStartContinousRecognitionBtn.addEventListener("click", function () {
+                $("#configWindow").slideUp();
+                $("#animationsWindow").fadeTo("slow", 1);
+
+                phraseDiv.innerHTML = "";
+                var lastRecognized = "";
+
+                speechConfig = SpeechSDK.SpeechConfig.fromSubscription(speechAPIKey.value, regionOptions.value);
+                speechConfig.speechRecognitionLanguage = "en-US";
+                reco = new SpeechSDK.SpeechRecognizer(speechConfig, SpeechSDK.AudioConfig.fromDefaultMicrophoneInput());
+
+                reco.recognizing = function (s, e) {
+                    phraseDiv.innerHTML = lastRecognized + e.result.text;
+                    SW.setAmplitude(0.8);
+                };
+
+                reco.recognized = function (s, e) {
+                    if (e.result.text) {
+                        lastRecognized += e.result.text + "\r\n";
+                        phraseDiv.innerHTML = lastRecognized;
+                        getSentiment(e.result.text);
+                        SW.setAmplitude(0.1);
+                    }
+                };
+
+                reco.startContinuousRecognitionAsync();
+            });
+
+            Initialize(function (speechSdk) {
+                SpeechSDK = speechSdk;
+            });
+        });
+
+        function Initialize(onComplete) {
+            if (!!window.SpeechSDK) {
+                onComplete(window.SpeechSDK);
+            }
+        }
+    </script>
+
+    <script>
+        // Sentiment analysis
+
+        var sentimentAVG = [];
+        var newPY;
+
+        function getSentiment (textSample)
+        {
+            var jsonText = '{ documents: [{ language: "en", id: 1, text: "' + textSample + '" }] }';
+            $.ajax({
+                type: "POST",
+                url: "https://" + regionOptions.value + ".api.cognitive.microsoft.com/text/analytics/v2.0/sentiment",
+                data: jsonText,
+                dataType: "json",
+                headers: {
+                    "Ocp-Apim-Subscription-Key": textAnalyticsAPIKey.value,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                success: function(data, textStatus, jqXHR)
+                {
+                    var sentValue = data.documents[0].score + '';
+                    var wholeNum = (sentValue * 100).toFixed(1);
+                    newPY = 100 - wholeNum;
+                    sentimentAVG.push(wholeNum);
+                    getSentimentAVG();
+                    swoopValue();
+                }
+            });
+        };
+
+        function swoopValue () {
+            var loop = setInterval(function() {
+                if (py > newPY)
+                py--;
+                else if (py < newPY)
+                py++;
+                else if (py == newPY || py > 98 || py < 2)
+                clearInterval(loop);
+            }, 10);
+        }
+
+        function getSentimentAVG () {
+            var sum = 0;
+            for ( var i = 0; i < sentimentAVG.length; i++ ) {
+                sum += parseInt( sentimentAVG[i], 10 );
+            }
+            sentimentGauge.refresh(sum / sentimentAVG.length);
+        }
+    </script>
+</body>
+</html>
